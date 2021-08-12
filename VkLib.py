@@ -39,6 +39,7 @@ class VkLib:
 
 	def __init__(self, token: str, group_id: int):
 		self.vk = vk_api.VkApi(token=token)
+		self.group_id = group_id
 		self.longpoll = VkBotLongPoll(self.vk, group_id)
 		self.vk_uploader = vk_api.VkUpload(self.vk)
 
@@ -110,3 +111,14 @@ class VkLib:
 		#        chats = json_reply['items']
 		#        for chat in chats
 		#            print[]
+
+	def get_chat_info(self, peer_id: int) -> str:
+		reply = self.vk.method('messages.getConversationsById', {'peer_ids': peer_id,
+																 'group_id': self.group_id})
+		return reply
+
+	def get_chat_admins(self, peer_id: int) -> list:
+		chat_info = json.loads(json.dumps(self.get_chat_info(peer_id)))
+		admins_list = list(chat_info['items'][0]['chat_settings']['admin_ids'])
+		admins_list.append(chat_info['items'][0]['chat_settings']['owner_id'])
+		return admins_list

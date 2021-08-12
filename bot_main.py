@@ -13,16 +13,15 @@ from typing import List
 import re
 from common import vk_message
 from VkLib import VkLib
-from DBLib import DBLib
 from modules.BaseModule import BaseModule
-from modules.FagModule import FagModule
+from modules.POTDModule import POTDModule
 
 class VKBot:
     def __init__(self):
         self.token, self.group_id = self.load_settings_from_file()
 
         self.vk = VkLib(self.token, self.group_id)
-        self.modules: List[BaseModule] = [FagModule(self.vk)]
+        self.modules: List[BaseModule] = [POTDModule(self.vk, self.group_id)]
 
         self.scheduled_check()
         self.listen_longpoll()
@@ -45,14 +44,13 @@ class VKBot:
 
     def check_is_for_me(self, message_text: str):
         if len(message_text) > 5:
-            match = re.match(r'((?:(?:бот)|(?:bot)|(?:джей)|(?:суб24)),? ?)', message_text[:6].lower())
+            match = re.match(r'((?:(?:джей)|(?:jay)),? ?)', message_text[:6].lower())
             if match:
                 return True, message_text[len(match.group(1)):]
         return False, ''
 
     def scheduled_check(self):
         threading.Timer(interval=1.0, function=self.scheduled_check, args=[]).start()
-
         for module in self.modules:
             module.scheduled_check()
 
@@ -71,7 +69,8 @@ class VKBot:
                             message.text = cleaned_message_text
 
                         for module in self.modules:
-                            module.parse_message(message)
+                            if module.check_message(message):
+                                break
 
             except:
                 s: str = traceback.format_exc()

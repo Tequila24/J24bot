@@ -9,7 +9,7 @@ class BaseModule:
 
 
 
-    def parse_message(self, message: common.vk_message) -> bool:
+    def check_message(self, message: common.vk_message) -> bool:
         raise NotImplementedError
 
     def scheduled_check(self):

@@ -48,7 +48,7 @@ class POTDModule(BaseModule):
 	def __init__(self, vk: VkLib, group_id: int):
 		self.group_id = group_id
 		self.vk = vk
-		self.db = DBLib("db\\potd")
+		self.db = DBLib("db//potd")
 		#self.start_in_chat(2000000001, 19155229)
 		#self.remove_user_from_players(2000000001, 19155229)
 		#self.check_today_fag(2000000001)
@@ -243,7 +243,6 @@ class POTDModule(BaseModule):
 			return False
 
 		if "открыть пидорклуб" in message.text:
-			print(message.peer_id)
 			self.start_in_chat(message.peer_id, message.author_id)
 			return True
 
@@ -261,7 +260,6 @@ class POTDModule(BaseModule):
 		match = re.match(r'удали(?:ть)? из пидорклуба @?(\w*)', message.text)
 		if match:
 			to_remove = match.group(1)
-			print("TO REMOVE: ", to_remove)
 			self.remove_user_from_players(message.peer_id, self.vk.get_user_id_by_domain(to_remove), message.author_id)
 			return True
 

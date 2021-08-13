@@ -19,8 +19,14 @@ class VariousModule(BaseModule):
 
     def __init__(self, vk: VkLib):
         self.vk = vk
-        self.db = DBLib("db\\etc_module")
+        self.db = DBLib("db//etc_module")
         self.db.create_table("active_chats", [('id', 'INTEGER')])
+
+    def introduce(self, peer_id: int):
+        self.vk.reply(peer_id, """beep-boop I'm a bot\n
+                                  Меня зовут Джей. Для полноценной работы всех модулей желательно выдать мне права администратора. 
+                                  Обратиться ко мне можно начав писать команду с имени, например "джей помощь" иди "@jay_bot помощь".
+                                  Книга жалоб и предложений - в личке моего профиля.""")
 
     def echo(self, peer_id: int, message: str):
         self.vk.reply(peer_id, '>' + message.strip())
@@ -50,8 +56,9 @@ class VariousModule(BaseModule):
 
     def check_message(self, message: common.vk_message) -> bool:
         if message.is_new_chat:
-            self.db.exc("""INSERT INTO 'active_chats' VALUES(?);""", (str(message.peer_id),))
+            self.db.exc("""INSERT OR REPLACE INTO 'active_chats' VALUES(?);""", (str(message.peer_id),))
             self.db.com()
+            self.introduce(message.peer_id)
             return True
 
         if 'эхо' in message.text[:3]:

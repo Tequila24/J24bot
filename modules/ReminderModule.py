@@ -18,7 +18,7 @@ class ReminderModule(BaseModule):
 
 	def __init__(self, vk: VkLib):
 		self.vk = vk
-		self.db = DBLib("db\\reminders", check_same_thread = False)
+		self.db = DBLib("db//reminders", check_same_thread = False)
 
 		self.schedule_check()
 
@@ -55,7 +55,6 @@ class ReminderModule(BaseModule):
 			# REMINDER TEXT
 			match = re.search(r'(.+) \d+[-.]\d+', reminder_raw)
 			if match:
-				print(match.groups())
 				reminder_text = match.group(1)
 
 			# DATE DD-MM | DD.MM

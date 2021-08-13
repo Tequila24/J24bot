@@ -9,20 +9,15 @@ import sqlite3
 
 class DBLib:
 
-	def __init__(self, db_name: str):
+	def __init__(self, db_name: str, check_same_thread = True):
 		self.db = None
 		self.cursor = None
-		self.isInit = False
-		self.open_db(db_name)
+		self.db = sqlite3.connect(db_name + '.db', check_same_thread=check_same_thread)
+		self.cursor = self.db.cursor()
 
 	def __exit__(self, exc_type, exc_value, traceback):
 		print('dbClosed')
 		self.db.cursor().close()
-
-	def open_db(self, db_name: str):
-		self.db = sqlite3.connect(db_name + '.db')
-		self.cursor = self.db.cursor()
-		self.isInit = True
 
 	def create_table(self, table_name: str, params):
 		query_begin = """CREATE TABLE IF NOT EXISTS '{0}'(""".format(table_name)

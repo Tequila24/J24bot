@@ -12,6 +12,7 @@ from DBLib import DBLib
 import re
 import json
 from datetime import datetime
+import time
 import random
 
 
@@ -40,7 +41,7 @@ countLines = [	"Минуточку, надо посчитать...",
 				"А ВОТ ОНИ:",
 				"В э фильме снимались:",
 				"Они сделали свой выбор:" ]
-import time
+
 
 class POTDModule(BaseModule):
 
@@ -77,9 +78,9 @@ class POTDModule(BaseModule):
 		if str(user_id) in players.keys():
 			if players[str(user_id)] != user_nickname:
 				players[str(user_id)] = user_nickname
+				self.vk.reply(peer_id, "@{0}, ты в игре".format(user_nickname))
 			else:
-				# self.vk.reply(peer_id, "Игрок {0} уже зарегистрирован под ником {1}!".format(user_id, user_nickname))
-				print("Игрок @{0} уже зарегистрирован под ником {1}!".format(str(user_id), user_nickname))
+				self.vk.reply(peer_id, "Игрок @{0} уже зарегистрирован под ником {1}!".format(user_id, user_nickname))
 		else:
 			players[str(user_id)] = user_nickname
 
@@ -130,8 +131,7 @@ class POTDModule(BaseModule):
 			last_fag_time: str = datetime.utcfromtimestamp(0).strftime("%Y-%m-%d")
 
 		# get players list
-		reply = self.db.exc("""SELECT value FROM '{0}' WHERE parameter = (?);""".format(("chat" + str(peer_id))),
-							("players",))
+		reply = self.db.exc("""SELECT value FROM '{0}' WHERE parameter = (?);""".format(("chat" + str(peer_id))), ("players",))
 		players: dict
 		if len(reply) != 0:
 			players = dict(json.loads(reply[0][0]))
@@ -190,7 +190,7 @@ class POTDModule(BaseModule):
 		self.db.exc("""INSERT OR REPLACE INTO '{0}' VALUES ((?), (?))""".format(("chat" + str(peer_id))), ("scoreboard", json.dumps(scoreboard)))
 		self.db.com()
 
-	def show_fag_stats(self, peer_id):
+	def show_fag_stats(self, peer_id: int):
 		# get scoreboard from DB
 		reply = self.db.exc("""SELECT value FROM '{0}' WHERE parameter = (?);""".format(("chat" + str(peer_id))), ("scoreboard",))
 		scoreboard: dict
@@ -225,7 +225,23 @@ class POTDModule(BaseModule):
 		self.vk.reply(peer_id, scoreboard_as_string)
 		pass
 
+	def show_players_list(self, peer_id: int):
+		reply = self.db.exc("""SELECT value FROM '{0}' WHERE parameter = (?);""".format(("chat" + str(peer_id))), ("players",))
+		players: dict
+		if len(reply) != 0:
+			players = dict(json.loads(reply[0][0]))
+		else:
+			players = {}
+		players = dict(sorted(players.items(), key=lambda x: x[1]))
+		players_msg: str = ""
+		for key in players.keys():
+			players_msg  = players_msg + ("@id{0}: {1}\n".format(str(key), str(players[key])))
+		self.vk.reply(peer_id, players_msg)
+
 	def check_message(self, message: common.vk_message):
+		if not message.is_for_me:
+			return False
+
 		if "открыть пидорклуб" in message.text:
 			print(message.peer_id)
 			self.start_in_chat(message.peer_id, message.author_id)
@@ -235,7 +251,6 @@ class POTDModule(BaseModule):
 		if match:
 			user_nickname = self.vk.get_user_domain_by_id(message.author_id)
 			self.add_user_to_players(message.peer_id, message.author_id, user_nickname)
-			self.vk.reply(message.peer_id, "@{0}, ты в игре".format(user_nickname))
 			return True
 
 		# do not let Dinar escape from the club
@@ -248,6 +263,7 @@ class POTDModule(BaseModule):
 			to_remove = match.group(1)
 			print("TO REMOVE: ", to_remove)
 			self.remove_user_from_players(message.peer_id, self.vk.get_user_id_by_domain(to_remove), message.author_id)
+			return True
 
 		if "кто пидор" in message.text:
 			self.check_today_fag(message.peer_id)
@@ -257,7 +273,16 @@ class POTDModule(BaseModule):
 			self.show_fag_stats(message.peer_id)
 			return True
 
+		if "список пидоров" in message.text:
+			self.show_players_list(message.peer_id)
+			return True
+
 		return False
 
-	def scheduled_check(self):
-		pass
+	def get_help(self) -> str:
+		return """Пидор Дня:
+				  открыть пидорклуб - запустить игру поиска пидора дня (доступно админам)
+				  добавь (меня) в пидорклуб - добавить автора сообщения в список игроков
+				  удали(ть) из пидорклуба [id\домен] - удалить пользователя под таким id\доменом из списка игроков (доступно админам)
+				  кто пидор - выбрать пидора дня
+				  топ пидоров - вывести таблицу лидеров-пидеров \n\n"""

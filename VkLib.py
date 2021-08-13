@@ -104,13 +104,11 @@ class VkLib:
 
 		return real_members_count
 
-	def get_chats(self):
+	# useless, working only for one-to-one chats, not conferences
+	'''def get_chats(self):
 		reply = self.vk.method('messages.getConversations')
 		json_reply = json.loads(json.dumps(reply))
-		chat_count = int(json_reply['count'])
-		#        chats = json_reply['items']
-		#        for chat in chats
-		#            print[]
+		pprint(json_reply)'''
 
 	def get_chat_info(self, peer_id: int) -> str:
 		reply = self.vk.method('messages.getConversationsById', {'peer_ids': peer_id,

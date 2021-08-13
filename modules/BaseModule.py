@@ -7,10 +7,8 @@ import common
 
 class BaseModule:
 
-
-
     def check_message(self, message: common.vk_message) -> bool:
         raise NotImplementedError
 
-    def scheduled_check(self):
-        pass
+    def get_help(self) -> str:
+        raise NotImplementedError

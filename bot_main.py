@@ -3,27 +3,33 @@
 @author: Fuego Tequila
 """
 
-
+from pprint import pprint
+import json
 from datetime import datetime
-import time
 import traceback
 from pathlib import Path
-import threading
 from typing import List
-import re
+import os
 from common import vk_message
 from VkLib import VkLib
 from modules.BaseModule import BaseModule
 from modules.POTDModule import POTDModule
+from modules.ReminderModule import ReminderModule
+from modules.VariousModule import VariousModule
 
 class VKBot:
     def __init__(self):
         self.token, self.group_id = self.load_settings_from_file()
 
-        self.vk = VkLib(self.token, self.group_id)
-        self.modules: List[BaseModule] = [POTDModule(self.vk, self.group_id)]
+        try:
+            os.mkdir("db/")
+        except OSError as error:
+            print("db directory already exists")
 
-        self.scheduled_check()
+        self.vk = VkLib(self.token, self.group_id)
+        self.modules: List[BaseModule] = [POTDModule(self.vk, self.group_id),
+                                          ReminderModule(self.vk),
+                                          VariousModule(self.vk)]
         self.listen_longpoll()
 
 
@@ -42,18 +48,6 @@ class VKBot:
                     group_id = int(line[9:].strip())
         return token, group_id
 
-    def check_is_for_me(self, message_text: str):
-        if len(message_text) > 5:
-            match = re.match(r'((?:(?:джей)|(?:jay)),? ?)', message_text[:6].lower())
-            if match:
-                return True, message_text[len(match.group(1)):]
-        return False, ''
-
-    def scheduled_check(self):
-        threading.Timer(interval=1.0, function=self.scheduled_check, args=[]).start()
-        for module in self.modules:
-            module.scheduled_check()
-
     def listen_longpoll(self):
         while True:
             try:
@@ -62,12 +56,13 @@ class VKBot:
 
                         message = vk_message(dict(event.object))
 
-                        is_for_me, cleaned_message_text = self.check_is_for_me(message.text)
-                        if not is_for_me:
-                            continue
-                        else:
-                            message.text = cleaned_message_text
+                        if "помощь" in message.text[:6]:
+                            help_str: str = ""
+                            for module in self.modules:
+                                help_str = help_str + module.get_help()
+                            self.vk.reply(message.peer_id, help_str)
 
+                        # Check message for
                         for module in self.modules:
                             if module.check_message(message):
                                 break
@@ -80,10 +75,8 @@ class VKBot:
 
 if __name__ == "__main__":
     print("I am compleeeeete")
-
     bot = VKBot()
 
-    print("MAIN THREAD: " + threading.currentThread().name)
 
 
 

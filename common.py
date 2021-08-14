@@ -19,7 +19,7 @@ class vk_message:
 
         self.is_for_me = False
         if len(self.text) > 5:
-            match = re.match(r'((?:(?:джей)|(?:jay)|(?:\[club206383181\|@jay_bot\])))', self.text[:24].lower())
+            match = re.match(r'((?:(?:джей,?)|(?:jay,?)|(?:\[club206383181\|@jay_bot\],?)))', self.text[:24].lower())
             if match:
                 self.is_for_me = True
                 self.text = self.text[len(match.group(1)):].strip()

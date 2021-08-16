@@ -25,7 +25,7 @@ class VariousModule(BaseModule):
     def introduce(self, peer_id: int):
         self.vk.reply(peer_id, """beep-boop I'm a bot\n
                                   Меня зовут Джей. Для полноценной работы всех модулей желательно выдать мне права администратора. 
-                                  Обратиться ко мне можно начав писать команду с имени, например "джей помощь" иди "@jay_bot помощь".
+                                  Прошу обращаться ко мне начав писать команду с имени, например "джей помощь" иди "@jay_bot помощь".
                                   Книга жалоб и предложений - в личке моего профиля.""")
 
     def echo(self, peer_id: int, message: str):
@@ -61,8 +61,11 @@ class VariousModule(BaseModule):
             self.introduce(message.peer_id)
             return True
 
-        if 'эхо' in message.text[:3]:
-            self.echo(message.peer_id, message.text[3:])
+        if not message.is_for_me:
+            return False
+
+        if 'эхо' in message.text[:3].lower():
+            self.echo(message.peer_id, message.text)
             return True
 
         match = re.match(r'(-?\d+)[DdДд](-?\d+)', message.text)
@@ -70,7 +73,7 @@ class VariousModule(BaseModule):
             self.reply_dice(message.peer_id, message.author_id, int(match.group(1)), int(match.group(2)))
             return True
 
-        if 'бродкаст' in message.text[:8]:
+        if 'бродкаст' in message.text[:8].lower():
             if int(message.peer_id) == 2000000001: #test conf
                 if int(message.author_id) == 19155229:
                     self.broadcast(message.text[8:])

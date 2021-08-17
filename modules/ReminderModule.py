@@ -42,10 +42,10 @@ class ReminderModule(BaseModule):
 															  0,
 															  int(match2.group(2)) if match2.group(2) is not None else 0,
 															  int(match2.group(1)) if match2.group(1) is not None else 0,
-															  0) ).strftime("%Y-%m-%d %H:%M:%S")
+															  0) ).strftime("%d-%m-%Y %H:%M:%S")
 		else:
 
-			year: str = str(datetime.now().year)
+			year: str = ""
 			month: str = ""
 			day: str = ""
 			hour: str = "10"
@@ -56,36 +56,39 @@ class ReminderModule(BaseModule):
 			match = re.search(r'(.+) \d+[-.]\d+', reminder_raw)
 			if match:
 				reminder_text = match.group(1)
-
-			# DATE DD-MM | DD.MM
-			match = re.search(r'(\d{1,2})[-.](\d{1,2})[^.]', reminder_raw)
-			if match:
-				year = str(datetime.now().year)
-				month = match.group(2)
-				day = match.group(1)
+				reminder_raw = reminder_raw.replace(match.group(1), '').strip()
 
 			# DATE YYYY-MM-DD | YYYY.MM.DD
-			match = re.search(r'(\d{4})[-.](\d{1,2})[-.](\d{1,2})', reminder_raw)
+			'''match = re.search(r'(\d{4})[-.](\d{1,2})[-.](\d{1,2})', reminder_raw)
 			if match:
 				year = match.group(1)
 				month = match.group(2)
-				day = match.group(3)
+				day = match.group(3)'''
 
 			# DATE DD-MM-YYYY | DD.MM.YYYY
-			match = re.search(r'(\d{1,2})[-.](\d{1,2})[-.](\d{4})', reminder_raw)
+			match = re.search(r'((\d{1,2})[-.](\d{1,2})[-.](\d{4}))', reminder_raw)
 			if match:
-				year = match.group(3)
-				month = match.group(2)
-				day = match.group(1)
+				year = match.group(4)
+				month = match.group(3)
+				day = match.group(2)
+				reminder_raw = reminder_raw.replace(match.group(1), '').strip()
+			else:
+				# DATE DD-MM | DD.MM
+				match = re.search(r'((\d{1,2})[-.](\d{1,2})[^.])', reminder_raw)
+				if match:
+					year = str(datetime.now().year)
+					month = match.group(3)
+					day = match.group(2)
+					reminder_raw = reminder_raw.replace(match.group(1), '').strip()
 
 			# TIME HH:MM:SS
-			match = re.search(r'в (\d{1,2}):?(\d{1,2})?:?(\d{1,2})?', reminder_raw)
+			match = re.search(r'(\d{1,2}):?(\d{1,2})?:?(\d{1,2})?', reminder_raw)
 			if match:
 				hour = match.group(1)
 				minute = match.group(2) if match.group(2) is not None else 0
 				second = match.group(3) if match.group(3) is not None else 0
 
-			expiration_date = "{0}-{1}-{2} {3}:{4}:{5}".format(	year, month, day, hour, minute, second)
+			expiration_date = "{0}-{1}-{2} {3}:{4}:{5}".format(	day, month, year, hour, minute, second)
 
 		return expiration_date, reminder_text
 
@@ -99,7 +102,7 @@ class ReminderModule(BaseModule):
 		expiration_date, reminder_text = self.parse_reminder_command(reminder_raw)
 
 		try:
-			datetime.strptime(expiration_date, "%Y-%m-%d %H:%M:%S")
+			datetime.strptime(expiration_date, "%d-%m-%Y %H:%M:%S")
 		except:
 			self.vk.reply(peer_id, "Неправильный формат!")
 			return
@@ -166,20 +169,20 @@ class ReminderModule(BaseModule):
 				if len(reminders):
 					for line in reminders:
 						try:
-							t_delta: float = (datetime.strptime(line[1], "%Y-%m-%d %H:%M:%S") - datetime.now()).total_seconds()
+							t_delta: float = (datetime.strptime(line[1], "%d-%m-%Y %H:%M:%S") - datetime.now()).total_seconds()
 							if t_delta < 0.0:
 								message: str = "@{0}, напоминаю: {1}".format(self.vk.get_user_domain_by_id(line[2]), line[3])
 								self.vk.reply(line[4], message, disable_mention=False)
 								self.db.exc("""DELETE FROM '{0}' WHERE id=(?);""".format(table), (line[0], ))
 								self.db.com()
 						except:
-							print("FAILURE {0}: \t".format(datetime.today().strftime("%Y-%m-%d %H:%M:%S")) + "удалена напоминалка: " + str(line))
+							print("FAILURE {0}: \t".format(datetime.today().strftime("%d-%m-%Y %H:%M:%S")) + "удалена напоминалка: " + str(line))
 							self.db.exc("""DELETE FROM '{0}' WHERE id=(?);""".format(table), (line[0],))
 							self.db.com()
 
 	def get_help(self) -> str:
 		return """Напоминалки:
 				  напомни (мне) [текст] через [часов] [минут] [секунд] - Напоминалка с пингом! Например: "напомни попить чаю через 30 минут
-				  напомни (мне) %текст %год-%месяц-%день %час-%минута-%секунда. Если время не будет указано, напомнит в 10:00:00
+				  напомни [текст] [день]-[месяц]-[год] (в\к) [час]-[минута]-[секунда]. Если время не будет указано, напомнит в 10:00:00
 				  мои напоминалки - вывести список напоминалок
 				  удали напоминалку [N] - удалить напоминалки под номером N \n\n"""

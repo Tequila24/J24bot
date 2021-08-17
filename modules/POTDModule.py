@@ -128,7 +128,7 @@ class POTDModule(BaseModule):
 		if len(reply) != 0:
 			last_fag_time: str = str(reply[0][0])
 		else:
-			last_fag_time: str = datetime.utcfromtimestamp(0).strftime("%Y-%m-%d")
+			last_fag_time: str = datetime.utcfromtimestamp(0).strftime("%d-%m-%Y")
 
 		# get players list
 		reply = self.db.exc("""SELECT value FROM '{0}' WHERE parameter = (?);""".format(("chat" + str(peer_id))), ("players",))
@@ -140,7 +140,7 @@ class POTDModule(BaseModule):
 
 		# check for cooldown
 		if last_fag_time != 0:
-			time_ago_in_secs: int = int((datetime.today() - datetime.strptime(last_fag_time, "%Y-%m-%d")).total_seconds())
+			time_ago_in_secs: int = int((datetime.today() - datetime.strptime(last_fag_time, "%d-%m-%Y")).total_seconds())
 			hours_ago: int = time_ago_in_secs // 3600
 			if (hours_ago < 24) and (last_fag_user_id != -1):
 				time_left = 24 - hours_ago
@@ -163,7 +163,7 @@ class POTDModule(BaseModule):
 		self.modify_fag_count_for(peer_id, today_fag_id, 1)
 
 		# save date and id of last winner
-		self.db.exc("""INSERT OR REPLACE INTO '{0}' VALUES ((?), (?))""".format(("chat" + str(peer_id))), ("last_fag_time", datetime.today().strftime("%Y-%m-%d")))
+		self.db.exc("""INSERT OR REPLACE INTO '{0}' VALUES ((?), (?))""".format(("chat" + str(peer_id))), ("last_fag_time", datetime.today().strftime("%d-%m-%Y")))
 		self.db.exc("""INSERT OR REPLACE INTO '{0}' VALUES ((?), (?))""".format(("chat" + str(peer_id))), ("last_fag_id", today_fag_id))
 		self.db.com()
 
